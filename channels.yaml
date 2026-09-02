@@ -3,7 +3,7 @@
 
 channels:
   - id: channel_3                         # unique; used in DB, logs, secret names
-    tiktok_username: "REPLACE_SOURCE"     # no @  -- movie recap / explained source
+    tiktok_username: "nerdstalgic"        # cinematic movie / BTS mini-docs
     youtube_channel_name: "HollywoodFrameLab"  # youtube.com/@hollywoodframelab-w7u
     owner_email: "dineshdhakad0001@gmail.com"
 
@@ -11,19 +11,16 @@ channels:
     oauth_token_file: "tokens/channel_3_token.json"
 
     videos_per_day: 1
-    description_footer: "Clips used for commentary / recap under fair use. All rights to their owners."
-    default_tags: [movie recap, movie explained, ending explained, film breakdown,
-                   movie summary, hollywood, cinema, movie in minutes, film analysis,
-                   plot explained, movie review, best movie scenes]
+    description_footer: ""
+    default_tags: [movie facts, behind the scenes, movie trivia, film facts, hollywood,
+                   cinema, did you know movies, movie scenes, filmmaking, actors,
+                   movie recap, ending explained]
     youtube_category_id: "24"             # 24 Entertainment (1 = Film & Animation)
     enabled: true
     max_retry_days: 7
 
-    # --- long-form settings ---
-    content_mode: longform               # no #Shorts tag, no vertical assumption
-    min_video_seconds: 180               # skip anything under 3 min
-    max_video_seconds: 1200              # skip anything over 20 min
-    shorts_max_seconds: 180             # (unused in longform mode)
+    content_mode: shorts                  # vertical Shorts, #Shorts tag added
+    shorts_max_seconds: 180
 
     upload_mode: short_only               # 1/day -> newest unposted first
     max_download_candidates: 20
@@ -31,8 +28,8 @@ channels:
     use_ai_seo: true
     edit:
       enabled: true
-      zoom_crop_pct: 1.0                 # gentle for 16:9
-      speed: 1.02
+      zoom_crop_pct: 2.0                 # gentle for 16:9
+      speed: 1.03
       hflip: false
       fade_seconds: 0.4
       sharpen: true
@@ -45,8 +42,8 @@ channels:
       brand_overlay:
         enabled: true
         image: "assets/brand_badge.png"
-        corner: br                       # bottom-right, small
-        width_pct: 9
+        corner: tr                       # top-right, small
+        width_pct: 11
         margin_pct: 3
         opacity: 0.9
 
