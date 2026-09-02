@@ -3,7 +3,7 @@
 
 channels:
   - id: channel_3                         # unique; used in DB, logs, secret names
-    tiktok_username: "nerdstalgic"        # cinematic movie / BTS mini-docs
+    tiktok_username: "vb1uknkt4jc"        # movie recap channel (7-9 min recaps)
     youtube_channel_name: "HollywoodFrameLab"  # youtube.com/@hollywoodframelab-w7u
     owner_email: "dineshdhakad0001@gmail.com"
 
@@ -11,16 +11,18 @@ channels:
     oauth_token_file: "tokens/channel_3_token.json"
 
     videos_per_day: 1
-    description_footer: ""
-    default_tags: [movie facts, behind the scenes, movie trivia, film facts, hollywood,
-                   cinema, did you know movies, movie scenes, filmmaking, actors,
-                   movie recap, ending explained]
+    description_footer: "Recap / commentary. All rights to original owners."
+    default_tags: [movie recap, movie explained, ending explained, film recap,
+                   movie summary, movie in minutes, hollywood, cinema, full movie recap,
+                   plot explained, best movie scenes, movie breakdown]
     youtube_category_id: "24"             # 24 Entertainment (1 = Film & Animation)
     enabled: true
     max_retry_days: 7
 
-    content_mode: shorts                  # vertical Shorts, #Shorts tag added
+    content_mode: longform                # no #Shorts tag, keep source aspect
     shorts_max_seconds: 180
+    min_video_seconds: 60
+    max_video_seconds: 900
 
     upload_mode: short_only               # 1/day -> newest unposted first
     max_download_candidates: 20
