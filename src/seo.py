@@ -35,22 +35,48 @@ def _keywords(text: str, n: int = 8) -> list[str]:
     return seen
 
 
+_RECAP_TITLES = [
+    "This Movie Has One of the Craziest Plot Twists Ever | Full Recap",
+    "The Ending of This Movie Left Everyone Speechless | Movie Recap",
+    "You Won't Believe How This Movie Ends | Full Movie Recap",
+    "This Thriller Keeps You Guessing Until the Last Minute | Recap",
+    "Nobody Saw This Twist Coming | Full Movie Recap & Ending Explained",
+    "This Movie Starts Normal Then Turns Into a Nightmare | Recap",
+    "The Whole Movie Was a Lie | Movie Recap & Ending Explained",
+    "This Is Why Everyone Is Talking About This Movie | Full Recap",
+]
+_US_HASHTAGS = ["#movierecap", "#movierecaps", "#moviereview", "#endingexplained",
+                "#movies", "#hollywood", "#film", "#movietok", "#netflix",
+                "#moviescene", "#thriller", "#fyp"]
+
+
 def _fallback(caption: str, tiktok_tags: list[str], base_tags: list[str],
               is_short: bool) -> Seo:
     cap = (caption or "").strip().replace("\n", " ")
-    cap_clean = re.sub(r"#\S+", "", cap).strip(" .,-|")   # drop hashtags from the title
-    kws = _keywords(cap) or base_tags[:5] or ["viral", "trending"]
-    title = (cap_clean[:80].rstrip(" .,-") if cap_clean else " ".join(kws[:6]).title())
+    cap_clean = re.sub(r"#\S+", "", cap).strip(" .,-|")   # drop hashtags
+    kws = _keywords(cap)
+
+    # caption is just hashtags / too thin -> use a rotating recap hook
+    if len(cap_clean) < 12:
+        seed = sum(ord(c) for c in (caption or "x"))
+        title = _RECAP_TITLES[seed % len(_RECAP_TITLES)]
+    else:
+        title = cap_clean[:88].rstrip(" .,-")
     if is_short and "#shorts" not in title.lower():
         title = (title[:88] + " #Shorts").strip()
+
+    extra = ["shorts", "viral", "trending", "fyp"] if is_short else \
+            ["viral", "trending", "fyp", "usa"]
     tags = list(dict.fromkeys(
-        [*base_tags, *[t.lower() for t in tiktok_tags], *kws,
-         "shorts", "viral", "trending", "fyp"]
-    ))[:20]
-    hashtags = " ".join("#" + re.sub(r"[^a-z0-9]", "", t) for t in
-                        (["shorts"] + kws[:4]) if t)
+        [*base_tags, *[t.lower() for t in tiktok_tags], *kws, *extra]
+    ))[:25]
+
+    hs = (["#shorts"] if is_short else []) + _US_HASHTAGS
+    hashtags = " ".join(dict.fromkeys(hs[:8]))
     desc = "\n".join(filter(None, [
-        cap[:150] if cap else "",
+        title.replace(" #Shorts", ""),
+        "",
+        "Full movie recap and ending explained. Subscribe for a new recap every day.",
         "",
         hashtags,
     ])).strip()

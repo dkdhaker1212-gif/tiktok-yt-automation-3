@@ -10,7 +10,7 @@ channels:
     google_credentials_file: "credentials/channel_3_client_secret.json"
     oauth_token_file: "tokens/channel_3_token.json"
 
-    videos_per_day: 1
+    videos_per_day: 2                     # slot 1 daily, slot 2 Sat/Sun only
     description_footer: "Recap / commentary. All rights to original owners."
     default_tags: [movie recap, movie explained, ending explained, film recap,
                    movie summary, movie in minutes, hollywood, cinema, full movie recap,
@@ -56,9 +56,11 @@ channels:
       accent_rgb: [230, 57, 70]
       hook_templates:
         - "THE ENDING EXPLAINED"
-        - "YOU MISSED THIS"
-        - "WAIT... WHAT?"
-        - "FULL BREAKDOWN"
+        - "WAIT FOR THE TWIST"
+        - "THIS ENDING IS INSANE"
+        - "NOBODY SAW THIS COMING"
+        - "FULL MOVIE RECAP"
 
-    slot_publish_times_utc:               # this IS the cron fire time
-      1: "12:30"                          # 6:00 PM IST
+    slot_publish_times_utc:               # cron fire times (slot 2 = weekends only)
+      1: "12:30"                          # 6:00 PM IST  (every day)
+      2: "16:30"                          # 10:00 PM IST (Sat & Sun only)
