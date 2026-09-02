@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 from dataclasses import dataclass
 
 _MODEL = os.environ.get("SEO_MODEL", "claude-haiku-4-5-20251001")
@@ -99,11 +100,128 @@ is_short: {is_short}
 """
 
 
+FFMPEG = os.environ.get("FFMPEG_BIN", "ffmpeg")
+_GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+
+_GEMINI_PROMPT = """You are given the audio of a faceless "movie recap" video.
+Identify the EXACT movie being recapped (name + release year). Base it on plot,
+character names, and dialogue you hear.
+
+Return ONLY minified JSON: {"movie","title","description","tags","hashtags"}
+- movie: "Name (Year)" or null if you truly cannot tell.
+- title: <= 90 chars. Front-load the movie name. Curiosity-driven, honest, no
+  ALL-CAPS spam. e.g. "Everyone Missed This Detail in <Movie> | Full Recap".
+- description: 180-320 words. Line 1 = a hook. Then name the movie, year, genre,
+  and lead actors if you can. One spoiler-free setup paragraph about the premise.
+  End with "New movie recaps every day - subscribe." Then a blank line and 6-8
+  US-style hashtags.
+- tags: 20 lowercase search phrases, no '#'. Include the movie name, lead actors,
+  genre, and "movie recap"/"ending explained"/"full movie recap" variants.
+- hashtags: 8 strings starting with '#', US style, include #movierecap.
+Original caption/hashtags from the source: {caption}
+"""
+
+
+def _extract_audio(media_path, out_m4a):
+    # AAC/m4a: always available in ffmpeg (mp3 encoder is often missing in
+    # static builds). Gemini mime type: audio/mp4.
+    try:
+        r = subprocess.run(
+            [FFMPEG, "-y", "-i", media_path, "-vn", "-ac", "1", "-ar", "16000",
+             "-c:a", "aac", "-b:a", "64k", out_m4a],
+            capture_output=True, text=True, timeout=300)
+        ok = os.path.isfile(out_m4a) and os.path.getsize(out_m4a) > 1000
+        if not ok:
+            print(f"[seo] audio extract failed rc={r.returncode}: "
+                  f"{(r.stderr or '')[-300:]}")
+        return ok
+    except Exception as exc:  # noqa: BLE001
+        print(f"[seo] audio extract failed: {exc}")
+        return False
+
+
+def _gemini(media_path, caption, base_tags):
+    import base64 as _b64
+    import urllib.request
+
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not (key and media_path and os.path.isfile(media_path)):
+        return None
+    aud = media_path + ".seo.m4a"
+    try:
+        if not _extract_audio(media_path, aud):
+            return None
+        if os.path.getsize(aud) > 18 * 1024 * 1024:      # inline cap ~20MB
+            print("[seo] audio too big for inline Gemini; skipping")
+            return None
+        audio_b64 = _b64.b64encode(open(aud, "rb").read()).decode()
+        body = json.dumps({
+            "contents": [{"parts": [
+                {"text": _GEMINI_PROMPT.replace("{caption}", (caption or "(none)")[:300])},
+                {"inline_data": {"mime_type": "audio/mp4", "data": audio_b64}},
+            ]}],
+            "generationConfig": {"responseMimeType": "application/json",
+                                 "temperature": 0.5, "maxOutputTokens": 2600},
+        }).encode()
+        import time
+        import urllib.error
+        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+               f"{_GEMINI_MODEL}:generateContent?key={key}")
+        resp = None
+        for attempt, wait in enumerate(([0, 8, 20, 45]), start=1):
+            if wait:
+                time.sleep(wait)
+            req = urllib.request.Request(url, data=body,
+                                        headers={"Content-Type": "application/json"})
+            try:
+                resp = json.loads(urllib.request.urlopen(req, timeout=180).read())
+                break
+            except urllib.error.HTTPError as he:
+                if he.code in (429, 500, 502, 503) and attempt < 4:
+                    print(f"[seo] Gemini {he.code}, retry {attempt}")
+                    continue
+                raise
+        if resp is None:
+            return None
+        parts = resp["candidates"][0]["content"]["parts"]
+        raw = "".join(p["text"] for p in parts if isinstance(p.get("text"), str))
+        raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```")
+        i, j = raw.find("{"), raw.rfind("}")          # tolerate stray prose
+        data = json.loads(raw[i:j + 1] if i != -1 and j != -1 else raw)
+        title = str(data.get("title", "")).strip()[:100]
+        desc = str(data.get("description", "")).strip()[:4900]
+        tags = [str(t).strip().lower().lstrip("#") for t in data.get("tags", []) if t]
+        hashtags = [str(h).strip() for h in data.get("hashtags", []) if h]
+        if hashtags and "#" not in desc:
+            desc = (desc + "\n\n" + " ".join(hashtags[:8])).strip()
+        tags = list(dict.fromkeys([*tags, *base_tags]))[:30]
+        if not title or not tags:
+            return None
+        print(f"[seo] Gemini metadata OK (movie={data.get('movie')!r})")
+        return Seo(title, desc, tags)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[seo] Gemini failed ({exc}); falling back")
+        return None
+    finally:
+        try:
+            os.remove(aud)
+        except OSError:
+            pass
+
+
 def generate(caption: str, tiktok_tags: list[str], base_tags: list[str],
-             is_short: bool) -> Seo:
+             is_short: bool, media_path: str | None = None) -> Seo:
+    # preferred: analyse the actual audio with Gemini (identifies the movie)
+    if os.environ.get("GEMINI_API_KEY", "").strip() and media_path:
+        g = _gemini(media_path, caption, base_tags)
+        if g:
+            if is_short and "#shorts" not in g.title.lower() and len(g.title) <= 91:
+                g.title = (g.title + " #Shorts").strip()
+            return g
+
     key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not key:
-        print("[seo] no ANTHROPIC_API_KEY; using template fallback")
+        print("[seo] no GEMINI/ANTHROPIC key usable; template fallback")
         return _fallback(caption, tiktok_tags, base_tags, is_short)
     try:
         import anthropic

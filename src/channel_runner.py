@@ -175,7 +175,8 @@ def run(channel: Channel, slot: int, dry_run: bool = False,
             # -- SEO: AI title / description / tags -----------------------
             if channel.use_ai_seo and not dry_run:
                 s = seo_mod.generate(caption, tiktok_tags,
-                                     channel.default_tags, short)
+                                     channel.default_tags, short,
+                                     media_path=path)
             else:
                 s = seo_mod._fallback(caption, tiktok_tags,
                                       channel.default_tags, short)
