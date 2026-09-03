@@ -19,6 +19,45 @@ class Seo:
     title: str
     description: str
     tags: list[str]
+    thumb_hook: str = ""
+
+
+def _norm(t: str) -> str:
+    t = (t or "").lower().replace("#shorts", "")
+    t = re.sub(r"[^a-z0-9 ]", "", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def _is_dupe(title: str, recent) -> bool:
+    n = _norm(title)
+    if not n:
+        return True
+    for r in recent or []:
+        rn = _norm(r)
+        if not rn:
+            continue
+        if n == rn:
+            return True
+        a, b = set(n.split()), set(rn.split())
+        if a and b and len(a & b) / max(len(a), len(b)) >= 0.85:
+            return True
+    return False
+
+
+_RECAP_MUT = [
+    "You Missed This", "Watch It Twice", "The Twist Hits Different",
+    "It All Connects", "Nobody Talks About This", "The Detail Everyone Skips",
+]
+
+
+def _mutate(title: str, recent) -> str:
+    base = title.split("|")[0].strip(" -|")
+    used = {_norm(r) for r in (recent or [])}
+    for h in _RECAP_MUT:
+        cand = f"{base} - {h}"
+        if _norm(cand) not in used:
+            return cand[:98]
+    return f"{base} (v{abs(hash(base)) % 999})"[:98]
 
 
 _STOP = {"the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with",
@@ -107,10 +146,14 @@ _GEMINI_PROMPT = """You are given the audio of a faceless "movie recap" video.
 Identify the EXACT movie being recapped (name + release year). Base it on plot,
 character names, and dialogue you hear.
 
-Return ONLY minified JSON: {"movie","title","description","tags","hashtags"}
+Return ONLY minified JSON:
+{"movie","title","description","tags","hashtags","thumb_hook"}
 - movie: "Name (Year)" or null if you truly cannot tell.
-- title: <= 90 chars. Front-load the movie name. Curiosity-driven, honest, no
-  ALL-CAPS spam. e.g. "Everyone Missed This Detail in <Movie> | Full Recap".
+- title: <= 90 chars. Front-load the movie name. Strong curiosity / clickbait
+  energy but honest, no ALL-CAPS spam. e.g.
+  "Everyone Missed This Detail in <Movie> | Full Recap".
+  It MUST be clearly different in wording AND structure from every title in
+  ALREADY_USED below - different hook, not just a swapped word.
 - description: 180-320 words. Line 1 = a hook. Then name the movie, year, genre,
   and lead actors if you can. One spoiler-free setup paragraph about the premise.
   End with "New movie recaps every day - subscribe." Then a blank line and 6-8
@@ -118,7 +161,10 @@ Return ONLY minified JSON: {"movie","title","description","tags","hashtags"}
 - tags: 20 lowercase search phrases, no '#'. Include the movie name, lead actors,
   genre, and "movie recap"/"ending explained"/"full movie recap" variants.
 - hashtags: 8 strings starting with '#', US style, include #movierecap.
+- thumb_hook: 2-4 punchy words for the thumbnail, no emojis, no hashtags.
 Original caption/hashtags from the source: {caption}
+ALREADY_USED (do NOT repeat or lightly reword any of these):
+{recent}
 """
 
 
@@ -140,7 +186,7 @@ def _extract_audio(media_path, out_m4a):
         return False
 
 
-def _gemini(media_path, caption, base_tags):
+def _gemini(media_path, caption, base_tags, recent_titles=None):
     import base64 as _b64
     import urllib.request
 
@@ -155,9 +201,12 @@ def _gemini(media_path, caption, base_tags):
             print("[seo] audio too big for inline Gemini; skipping")
             return None
         audio_b64 = _b64.b64encode(open(aud, "rb").read()).decode()
+        recent = "\n".join(f"- {t[:90]}" for t in (recent_titles or [])[:30]) or "(none)"
         body = json.dumps({
             "contents": [{"parts": [
-                {"text": _GEMINI_PROMPT.replace("{caption}", (caption or "(none)")[:300])},
+                {"text": _GEMINI_PROMPT
+                 .replace("{caption}", (caption or "(none)")[:300])
+                 .replace("{recent}", recent)},
                 {"inline_data": {"mime_type": "audio/mp4", "data": audio_b64}},
             ]}],
             "generationConfig": {"responseMimeType": "application/json",
@@ -192,13 +241,14 @@ def _gemini(media_path, caption, base_tags):
         desc = str(data.get("description", "")).strip()[:4900]
         tags = [str(t).strip().lower().lstrip("#") for t in data.get("tags", []) if t]
         hashtags = [str(h).strip() for h in data.get("hashtags", []) if h]
+        hook = str(data.get("thumb_hook", "")).strip()[:40]
         if hashtags and "#" not in desc:
             desc = (desc + "\n\n" + " ".join(hashtags[:8])).strip()
         tags = list(dict.fromkeys([*tags, *base_tags]))[:30]
         if not title or not tags:
             return None
         print(f"[seo] Gemini metadata OK (movie={data.get('movie')!r})")
-        return Seo(title, desc, tags)
+        return Seo(title, desc, tags, thumb_hook=hook)
     except Exception as exc:  # noqa: BLE001
         print(f"[seo] Gemini failed ({exc}); falling back")
         return None
