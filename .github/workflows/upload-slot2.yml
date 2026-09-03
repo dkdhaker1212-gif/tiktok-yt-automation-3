@@ -1,8 +1,8 @@
-name: "Channel 3 - Weekend Upload SLOT 2 (16:30 UTC Sat/Sun / 10 PM IST)"
+name: "Channel 3 - Weekend Upload SLOT 2 (14:00 UTC Sat/Sun / 10 AM ET)"
 
 on:
   schedule:
-    - cron: "30 16 * * 6,0"    # 16:30 UTC on Sat & Sun only = 10 PM IST
+    - cron: "0 14 * * 6,0"     # 14:00 UTC on Sat & Sun only = 10:00 AM US Eastern (weekend long-form peak); 7:30 PM IST
   workflow_dispatch:
     inputs:
       channel:

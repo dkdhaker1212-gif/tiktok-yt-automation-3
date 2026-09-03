@@ -62,5 +62,5 @@ channels:
         - "FULL MOVIE RECAP"
 
     slot_publish_times_utc:               # cron fire times (slot 2 = weekends only)
-      1: "12:30"                          # 6:00 PM IST  (every day)
-      2: "16:30"                          # 10:00 PM IST (Sat & Sun only)
+      1: "19:00"                          # 3:00 PM US Eastern, every day (drops fresh for the US 6-10 PM long-form block) = 12:30 AM IST
+      2: "14:00"                          # 10:00 AM US Eastern, Sat & Sun only (weekend long-form peak) = 7:30 PM IST
