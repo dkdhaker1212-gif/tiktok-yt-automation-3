@@ -24,7 +24,7 @@ channels:
     min_video_seconds: 60
     max_video_seconds: 900
 
-    upload_mode: short_only               # 1/day -> newest unposted first
+    upload_mode: popular_only             # always pick the most-viewed unposted video
     max_download_candidates: 20
 
     use_ai_seo: true
