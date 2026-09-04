@@ -91,7 +91,7 @@ _US_HASHTAGS = ["#movierecap", "#movierecaps", "#moviereview", "#endingexplained
 
 
 def _fallback(caption: str, tiktok_tags: list[str], base_tags: list[str],
-              is_short: bool) -> Seo:
+              is_short: bool, recent_titles: list[str] | None = None) -> Seo:
     cap = (caption or "").strip().replace("\n", " ")
     cap_clean = re.sub(r"#\S+", "", cap).strip(" .,-|")   # drop hashtags
     kws = _keywords(cap)
@@ -266,11 +266,19 @@ def _gemini(media_path, caption, base_tags, recent_titles=None):
 
 
 def generate(caption: str, tiktok_tags: list[str], base_tags: list[str],
-             is_short: bool, media_path: str | None = None) -> Seo:
+             is_short: bool, media_path: str | None = None,
+             recent_titles: list[str] | None = None) -> Seo:
+    recent_titles = recent_titles or []
     # preferred: analyse the actual audio with Gemini (identifies the movie)
     if os.environ.get("GEMINI_API_KEY", "").strip() and media_path:
-        g = _gemini(media_path, caption, base_tags)
+        g = _gemini(media_path, caption, base_tags, recent_titles)
+        if g and _is_dupe(g.title, recent_titles):
+            g2 = _gemini(media_path, caption, base_tags, recent_titles + [g.title])
+            if g2:
+                g = g2
         if g:
+            if _is_dupe(g.title, recent_titles):
+                g.title = _mutate(g.title, recent_titles)
             if is_short and "#shorts" not in g.title.lower() and len(g.title) <= 91:
                 g.title = (g.title + " #Shorts").strip()
             return g
