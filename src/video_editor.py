@@ -26,6 +26,14 @@ FFPROBE = os.environ.get("FFPROBE_BIN", "ffprobe")
 class EditOptions:
     enabled: bool = True
 
+    # reframe: turn a vertical/portrait source into a 16:9 landscape YouTube frame
+    #   "none" -> keep source aspect (default)
+    #   "fill" -> scale-to-cover 1920x1080 + centre-crop (fills screen, no bars;
+    #             for this account's template that lands on the middle content
+    #             panel and drops the top title bar + bottom dead space)
+    reframe: str = "none"
+    reframe_y_pct: float = 0.0          # shift the crop window down (+) / up (-) as % of height
+
     # de-dup transform (subtle -- changes the fingerprint, not the look)
     zoom_crop_pct: float = 2.0
     speed: float = 1.03                 # 1.0 = off; retimes video + audio
@@ -121,11 +129,25 @@ def process(in_path: str, out_path: str, cfg: Optional[dict] = None) -> str:
     chain, last = _blur_chain(w, h, opts.blur_regions)
     vf = list(chain)
 
+    # -- reframe: portrait -> 16:9 landscape (scale-to-cover + centre-crop) ---
+    reframe = (opts.reframe or "none").lower()
+    if reframe == "fill":
+        OW, OH = 1920, 1080
+    else:
+        OW, OH = w, h
+
     tail: list[str] = []
+    if reframe == "fill":
+        tail.append(
+            f"scale={OW}:{OH}:force_original_aspect_ratio=increase:flags=lanczos")
+        yoff = f"(ih-{OH})/2"
+        if opts.reframe_y_pct:
+            yoff += f"+ih*{opts.reframe_y_pct / 100.0:.4f}"
+        tail.append(f"crop={OW}:{OH}:(iw-{OW})/2:{yoff}")
     if opts.zoom_crop_pct and opts.zoom_crop_pct > 0:
         keep = 1 - (opts.zoom_crop_pct / 100.0)
         tail.append(f"crop=iw*{keep:.4f}:ih*{keep:.4f}")
-        tail.append(f"scale={w}:{h}:flags=lanczos")
+        tail.append(f"scale={OW}:{OH}:flags=lanczos")
     if opts.denoise:
         tail.append("hqdn3d=1.5:1.5:6:6")
     if opts.sharpen:
@@ -163,8 +185,8 @@ def process(in_path: str, out_path: str, cfg: Optional[dict] = None) -> str:
         mpct = float(bo.get("margin_pct", 2)) / 100.0
         opac = float(bo.get("opacity", 1.0))
         corner = (bo.get("corner") or "tl").lower()
-        bw = max(16, int(w * wpct))
-        mx = int(w * mpct)
+        bw = max(16, int(OW * wpct))
+        mx = int(OW * mpct)
         pos = {
             "tl": f"{mx}:{mx}",
             "tr": f"W-w-{mx}:{mx}",

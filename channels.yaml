@@ -3,49 +3,54 @@
 
 channels:
   - id: channel_3                         # unique; used in DB, logs, secret names
-    tiktok_username: "vb1uknkt4jc"        # movie recap channel (7-9 min recaps)
-    youtube_channel_name: "HollywoodFrameLab"  # youtube.com/@hollywoodframelab-w7u
+    tiktok_username: "tawannai0"          # no @  -- ASMR restoration: abandoned cars, rusty tools, vintage objects "rust to riches"
+    youtube_channel_name: "Rust & Revival"   # <-- rebrand the YT channel to match (was "HollywoodFrameLab")
     owner_email: "dineshdhakad0001@gmail.com"
 
     google_credentials_file: "credentials/channel_3_client_secret.json"
     oauth_token_file: "tokens/channel_3_token.json"
 
-    videos_per_day: 2                     # slot 1 daily, slot 2 Sat/Sun only
-    description_footer: "Recap / commentary. All rights to original owners."
-    default_tags: [movie recap, movie explained, ending explained, film recap,
-                   movie summary, movie in minutes, hollywood, cinema, full movie recap,
-                   plot explained, best movie scenes, movie breakdown]
-    youtube_category_id: "24"             # 24 Entertainment (1 = Film & Animation)
+    videos_per_day: 1
+    description_footer: "Restoration / ASMR. Footage from the original creator; commentary and edit are our own."
+    default_tags: [restoration, asmr restoration, rust removal, tool restoration, car restoration,
+                   abandoned car restoration, rusty tool restoration, satisfying restoration,
+                   restoration asmr, rust to riches, antique restoration, cleaning asmr,
+                   most satisfying video, diy restoration, before and after, oddly satisfying,
+                   restoration process, vintage restoration, metal restoration, full restoration]
+    youtube_category_id: "24"             # 24 Entertainment
     enabled: true
     max_retry_days: 7
 
-    content_mode: longform                # no #Shorts tag, keep source aspect
+    content_mode: longform                # no #Shorts tag, keep long videos
     shorts_max_seconds: 180
-    min_video_seconds: 60
-    max_video_seconds: 900
+    min_video_seconds: 60                 # restoration videos run minutes
+    max_video_seconds: 1800              # up to 30 min
 
     upload_mode: popular_only             # always pick the most-viewed unposted video
     max_download_candidates: 20
 
     use_ai_seo: true
+    seo_language: "en"
     edit:
       enabled: true
-      zoom_crop_pct: 2.0                 # gentle for 16:9
-      speed: 1.03
+      reframe: "fill"                    # portrait TikTok -> 16:9 1920x1080 fullscreen (like channel 9)
+      reframe_y_pct: 0.0
+      zoom_crop_pct: 1.5
+      speed: 1.02
       hflip: false
       fade_seconds: 0.4
       sharpen: true
       denoise: false
       saturation: 1.04
-      contrast: 1.03
+      contrast: 1.04
       loudnorm: true
       volume_gain_db: 0.0
       blur_regions: []
       brand_overlay:
         enabled: true
         image: "assets/brand_badge.png"
-        corner: tr                       # top-right, small
-        width_pct: 11
+        corner: tr
+        width_pct: 10
         margin_pct: 3
         opacity: 0.9
 
@@ -53,14 +58,12 @@ channels:
       enabled: true
       hook_source: title
       position: bottom
-      accent_rgb: [230, 57, 70]
+      accent_rgb: [217, 119, 6]
       hook_templates:
-        - "THE ENDING EXPLAINED"
-        - "WAIT FOR THE TWIST"
-        - "THIS ENDING IS INSANE"
-        - "NOBODY SAW THIS COMING"
-        - "FULL MOVIE RECAP"
+        - "RUST TO RICHES"
+        - "WAIT FOR THE END"
+        - "SO SATISFYING"
+        - "TOTALLY TRANSFORMED"
 
-    slot_publish_times_utc:               # cron fire times (slot 2 = weekends only)
-      1: "19:00"                          # 3:00 PM US Eastern, every day (drops fresh for the US 6-10 PM long-form block) = 12:30 AM IST
-      2: "14:00"                          # 10:00 AM US Eastern, Sat & Sun only (weekend long-form peak) = 7:30 PM IST
+    slot_publish_times_utc:               # these ARE the cron fire times (IST = UTC + 5:30)
+      1: "15:30"                          # 9:00 PM IST
