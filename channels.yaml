@@ -46,6 +46,11 @@ channels:
       loudnorm: true
       volume_gain_db: 0.0
       blur_regions: []
+      hook_caption:                    # burned-in hook, first 3s (retention + transformation)
+        enabled: true
+        seconds: 3
+        position: top
+        size_pct: 5.6
       brand_overlay:
         enabled: true
         image: "assets/brand_badge.png"
