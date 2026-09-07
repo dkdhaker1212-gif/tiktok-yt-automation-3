@@ -220,8 +220,9 @@ def _gemini(media_path, caption, base_tags, recent_titles, language="en",
     import urllib.error
     import urllib.request
 
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not (key and media_path and os.path.isfile(media_path)):
+    keys = [k.strip() for k in re.split(r"[,\s]+", os.environ.get("GEMINI_API_KEY", ""))
+            if k.strip()]
+    if not (keys and media_path and os.path.isfile(media_path)):
         return None
 
     aud = media_path + ".seo.m4a"
@@ -254,30 +255,43 @@ def _gemini(media_path, caption, base_tags, recent_titles, language="en",
                                  "temperature": 0.9,
                                  "maxOutputTokens": 2200 if is_short else 3200},
         }).encode()
-        url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-               f"{_GEMINI_MODEL}:generateContent?key={key}")
         import socket
+        # try every (key x model) combo; the free flash endpoint 503s a lot from
+        # datacenter IPs, and gemini-flash-lite-latest is usually less loaded.
+        models = [m.strip() for m in os.environ.get(
+            "GEMINI_MODELS", f"{_GEMINI_MODEL},gemini-flash-lite-latest").split(",")
+            if m.strip()]
+        combos = [(k, m) for m in models for k in keys]
+        # two passes with growing backoff between full sweeps
+        plan = [(c, 0) for c in combos] + [(c, 20) for c in combos] \
+            + [(c, 55) for c in combos]
         resp = None
-        waits = [0, 10, 25, 50, 90]
-        for attempt, wait in enumerate(waits, start=1):
+        for (k, m), wait in plan:
             if wait:
                 time.sleep(wait)
+            url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+                   f"{m}:generateContent?key={k}")
             req = urllib.request.Request(
                 url, data=body, headers={"Content-Type": "application/json"})
             try:
                 resp = json.loads(urllib.request.urlopen(req, timeout=300).read())
+                if k != keys[0] or m != models[0]:
+                    print(f"[seo] Gemini OK via key#{keys.index(k) + 1} / {m}")
                 break
             except urllib.error.HTTPError as he:
-                if he.code in (429, 500, 502, 503) and attempt < len(waits):
-                    print(f"[seo] Gemini {he.code}, retry {attempt}")
+                if he.code in (400, 401, 403, 404):
+                    print(f"[seo] Gemini {he.code} on key#{keys.index(k) + 1}/{m} "
+                          f"(bad key/model) - skipping it")
+                    continue
+                if he.code in (429, 500, 502, 503):
+                    print(f"[seo] Gemini {he.code} key#{keys.index(k) + 1}/{m}")
                     continue
                 raise
             except (socket.timeout, urllib.error.URLError, TimeoutError) as te:
-                if attempt < len(waits):
-                    print(f"[seo] Gemini timeout ({te}), retry {attempt}")
-                    continue
-                raise
+                print(f"[seo] Gemini timeout ({te}) key#{keys.index(k) + 1}/{m}")
+                continue
         if resp is None:
+            print("[seo] Gemini exhausted all keys/models; falling back")
             return None
         rparts = resp["candidates"][0]["content"]["parts"]
         raw = "".join(p["text"] for p in rparts if isinstance(p.get("text"), str))
