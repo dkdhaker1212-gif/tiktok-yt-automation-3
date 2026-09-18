@@ -18,7 +18,7 @@ channels:
                    most satisfying video, diy restoration, before and after, oddly satisfying,
                    restoration process, vintage restoration, metal restoration, full restoration]
     youtube_category_id: "24"             # 24 Entertainment
-    enabled: true
+    enabled: false                        # PAUSED 2026-09-18: no traction, stop posting (see memory)
     max_retry_days: 7
 
     content_mode: longform                # no #Shorts tag, keep long videos
