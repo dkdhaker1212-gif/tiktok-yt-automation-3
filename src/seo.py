@@ -79,12 +79,20 @@ _HOOK_POOL_ES = [
     "Como Es Esto Real", "Mira La Ultima Parte", "Miralo Hasta El Final",
     "Esto Sorprendio A Todos",
 ]
-_LANG_NAMES = {"en": "English", "es": "Spanish"}
-_LANG_HOOKS = {"en": _HOOK_POOL, "es": _HOOK_POOL_ES}
+_HOOK_POOL_PT = [
+    "Espera Ate O Final", "Isso Deu Uma Reviravolta", "Ninguem Esperava Isso",
+    "So Melhora A Cada Segundo", "Voce Precisa Ver Isso", "Isso Nao E Normal",
+    "Como Isso E Real", "Olha A Parte Final", "Assista Ate O Fim",
+    "Isso Pegou Todo Mundo De Surpresa",
+]
+_LANG_NAMES = {"en": "English", "es": "Spanish", "pt": "Portuguese"}
+_LANG_HOOKS = {"en": _HOOK_POOL, "es": _HOOK_POOL_ES, "pt": _HOOK_POOL_PT}
 _LANG_HASHTAGS = {
     "en": ["#shorts", "#viral", "#trending", "#fyp", "#usa", "#foryou",
            "#reels", "#viralvideo"],
     "es": ["#shorts", "#viral", "#tendencia", "#paraty", "#satisfactorio",
+           "#fyp", "#reels", "#viralvideo"],
+    "pt": ["#shorts", "#viral", "#tendencia", "#paravoce", "#satisfatorio",
            "#fyp", "#reels", "#viralvideo"],
 }
 
