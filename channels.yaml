@@ -4,6 +4,7 @@
 channels:
   - id: channel_3                         # unique; used in DB, logs, secret names
     tiktok_username: "forjanatalense"     # no @  -- Brazilian blacksmith/bladesmith (Brenno Lima, Natal-RN), forging knives/axes from raw steel. 29.3K followers, no YouTube presence found (checked directly -- only an unrelated namesake, a classical pianist, shows up in YT search). Replicates ch8 Hachazo Perfecto's proven formula (craft/forging process reveal, underserved non-English market) in Portuguese/Brazil instead of Spanish. Swapped in from "Rust & Revival" (ASMR restoration, 0 traction on its own content, paused 2026-09-18).
+    tiktok_username_backup: "fabbrogallino"  # no @ -- emergency-only fallback, used automatically if the primary source runs dry or every candidate it offers fails to post. 36.9K followers, Italian blacksmith; has an old YouTube tutorial archive (different content style/format from the short clips, lower duplicate risk).
     youtube_channel_name: "Aco em Chamas"
     owner_email: "dineshdhakad0001@gmail.com"
 
