@@ -18,7 +18,7 @@ channels:
                    satisfatorio, forja de facas, bigorna, trabalho com metal,
                    feito a mao, shorts virais, artesanato, machado forjado]
     youtube_category_id: "24"             # 24 Entertainment (forging / craft content)
-    enabled: true
+    enabled: false                        # PAUSED 2026-11-11 by owner: ~0 views after many source swaps; workflows disabled too
     max_retry_days: 7
     shorts_max_seconds: 180
     min_video_seconds: 12                 # skip clips shorter than 12s
